@@ -1,13 +1,18 @@
 import React, { useState,useLayoutEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions,Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useNavigation } from 'expo-router';
+import axios from 'axios';
+import { Domain } from '../pages/domain';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export default function Login() {
   const { width, height } = Dimensions.get('window');
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  
   const navigation=useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -26,14 +31,38 @@ export default function Login() {
     });
   }, [navigation]);
 
-  const handleLogin = () => {
-    if (username && password) {
-      console.log('Username:', username, 'Password:', password);
-      router.push('./home'); // Navigate to the home page
-    } else {
-      alert('Please enter both username and password');
+
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Validation Error', 'Please enter both username and password');
+      return;
+    }
+  
+    try {
+      // Make a POST request to the Django backend
+      const response = await axios.post(`${Domain}/user/`, {
+        username: username,
+        password: password,
+      });
+  
+      // Handle successful login
+      if (response.data.success) {
+        // Save token or username to AsyncStorage
+        await AsyncStorage.setItem('userToken', response.data.token);
+        const token = await AsyncStorage.getItem('userToken');
+        console.log(token)
+ 
+        router.push('/(tabs)');
+      } else {
+        Alert.alert('Login Failed', response.data.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login Error:', error.response?.data || error.message);
+      Alert.alert('Error', 'Unable to login. Please try again later.');
     }
   };
+  
 
   return (
     <View style={[styles.main, { width: width, height: height }]}>

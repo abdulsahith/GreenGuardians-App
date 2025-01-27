@@ -5,6 +5,9 @@ import { Video } from 'expo-av';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { Domain } from '../pages/domain';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+
 export default function Home() {
   const { width, height } = Dimensions.get('window');
   const videoPlastic = useRef(null);
@@ -12,27 +15,78 @@ export default function Home() {
   const router = useRouter();
   const [pyrodata,setPyro]=useState('');
   const [bsfldata,setBsfl]=useState('');
-  useEffect(() => {
+  const [refresh, setRefresh] = useState(false);
+  const [mon,setMon]=useState(null);
+  const [scan,setScan]=useState('');
+
+
+
+useFocusEffect(
+  React.useCallback(() => {
     fetchPyro();
     fetchBsfl();
-}, []);
+    setRefresh(false); // Reset refresh trigger
+    const handle = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        console.log(token); // This should log the token if it was saved properly
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+    handle();
+    
+  }, [])
+);
+
+
  
   const fetchPyro = async () => {
     try {
-      const response = await axios.get(`${Domain}/pyro/`) 
+      const response = await axios.get(`${Domain}/get_Pyroweight/`) 
       // console.log(response.data);
-      setPyro(response.data);   
+      setPyro(response.data);
+      
+      const data=response.data[0];
+       console.log(data)
+      setMon({
+          money:data.pyroweigh*30.68
+      });
+     
     } catch (error) {
       console.error('Error fetching data:', error);
+
+     
     }
   };
   
+   
+
+
+//   const fetchStatuses = async () => {
+//     try {
+//         const response = await axios.get(`${Domain}/get_Pyroweight/`);
+        
+//         // Assuming response.data is an array, select the first object
+//         const data = response.data[0];
+//         setPyro({
+//           pyro:data.pyroweigh
+
+//         });
+        
+//     } catch (error) {
+//         console.error('Error fetching statuses:', error);
+//     }
+// };
+
+  
   const fetchBsfl = async () => {
     try {
-      const response = await axios.get(`${Domain}/bsfl/`) 
+      const response = await axios.get(`${Domain}/get_Bsflweight/`) 
       // console.log(response.data);
-      setBsfl(response.data);   
+      setBsfl(response.data);
     } catch (error) {
+      
       console.error('Error fetching data:', error);
     }
   };
@@ -47,10 +101,20 @@ export default function Home() {
         <View style={styles.logo}><Ionicons size={28} name="person" color={'#37B7C3'} /></View>
       </View>
       <View style={styles.mainbox}>
+        <View style={styles.tools}>
         <View style={styles.day}>
           <Text style={{color:'white', fontSize:15, fontWeight:'bold'}}>Day 1: Monday</Text>
         </View>
 
+      
+
+        <TouchableOpacity style={styles.scan} onPress={()=>{router.push('./pages/scan')}}>
+        <Ionicons size={28} name="scan" color={'#37B7C3'} />
+        </TouchableOpacity>
+        </View>
+
+
+      
         {/* Navigate to pages/plastic when pressed */}
         <TouchableOpacity style={styles.box} onPress={() => { router.push('./pages/plastic'); }}>
           <View style={styles.subBox}>
@@ -65,6 +129,7 @@ export default function Home() {
              shouldPlay
             />
           </View>
+
           <Ionicons size={28} name="arrow-forward-circle" style={styles.arrow} color={'white'}/>
         </TouchableOpacity>
         
@@ -93,16 +158,23 @@ export default function Home() {
             <View style={styles.circle}>
               <Text style={[styles.cirTxt,{marginTop:60}]}>Plastic waste</Text>
 
+
           <View>
               <FlatList  style={styles.fat}
   data={pyrodata}
   keyExtractor={(item) => item.id.toString()}  // Use unique identifier, such as 'id'
-  renderItem={({ item }) => (
-    <Text style={styles.Kgtxt}>
-      {item.addpyro ? item.addpyro : 0} Kg {/* Ensure 'pyro' exists */}
+  renderItem={({ item }) => ( 
+  <Text style={styles.Kgtxt}>
+     {item.pyroweigh ? item.pyroweigh : 0} Kg 
     </Text>
+  
   )}
 />
+
+    {/* <Text style={styles.Kgtxt}>
+    {pyrodata?.['pyro']}  g
+    </Text> */}
+ 
 </View>
       </View>    
             {/* 1st circle */}
@@ -110,11 +182,12 @@ export default function Home() {
               <Text style={[styles.cirTxt,{marginTop:60}]} >Natural waste</Text>
               <View>
               <FlatList  
+
   data={bsfldata}
   keyExtractor={(item) => item.id.toString()}  // Use unique identifier, such as 'id'
   renderItem={({ item }) => (
     <Text style={styles.Kgtxt}>
-      {item.addbsfl ? item.addbsfl : 0} Kg {/* Ensure 'pyro' exists */}
+      {item.bsflweight ? item.bsflweight : 0} kg {/* Ensure 'pyro' exists */}
     </Text>
   )}
 />
@@ -122,11 +195,67 @@ export default function Home() {
  </View>
             {/* 2nd circle */}
             <View style={styles.circle}>
-              <Text style={styles.cirTxt}>Your Earnings</Text>
-              <Text style={styles.Kgtxt}>5000</Text>
-            </View>
+              <Text style={[styles.cirTxt,{marginTop:60}]}>plastic earnings</Text>
+
+
+          <View>
+              <FlatList  style={styles.fat}
+  data={pyrodata}
+  keyExtractor={(item) => item.id.toString()}  // Use unique identifier, such as 'id'
+  renderItem={({ item }) => ( 
+  <Text style={[styles.Kgtxt,{fontSize:25}]}>
+    ₹ {item.addpyroweight ? item.addpyroweight : 0} 
+    </Text>
+  
+  )}
+/>
+
+   
+   
+</View>
+      </View>   
             {/* 3rd circle */}
+
+            <View style={styles.circle}>
+              <Text style={[styles.cirTxt,{marginTop:60}]}>organic earnings</Text>
+
+
+          <View>
+              <FlatList  style={styles.fat}
+  data={pyrodata}
+  keyExtractor={(item) => item.id.toString()}  // Use unique identifier, such as 'id'
+  renderItem={({ item }) => ( 
+  <Text style={[styles.Kgtxt,{fontSize:25}]}>
+    ₹ {item.addbsflweight ? item.addbsflweight : 0} 
+    </Text>
+  
+  )}
+/>
+
+     
+   
+</View>
+      </View>  
+
+       
           </ScrollView>
+
+          
+            
+          <FlatList  style={styles.fat}
+  data={pyrodata}
+  keyExtractor={(item) => item.id.toString()}  // Use unique identifier, such as 'id'
+  renderItem={({ item }) => ( 
+  <Text style={[styles.Kgtxt,{fontSize:20,textAlign:'center'}]}>
+    You are reducing {item.carbon ? item.carbon : 0} kg carbon footprint
+    </Text>
+  
+  )}
+/>
+             
+
+          
+
         </View>
       </View>
     </View>
@@ -181,10 +310,41 @@ const styles = StyleSheet.create({
     alignItems:'center',
     backgroundColor:'#243642',
     borderRadius:20,
-    marginLeft:-200,
-    marginTop:-40,
     borderColor:'#C4E1F6',
     borderWidth:0.5,
+    marginTop:5
+  },
+  tools:{
+    width:"92%",
+    height:"auto",
+    flexDirection:'row',
+    justifyContent:'space-between',
+    marginTop:-20
+  },
+  pickerContainer: {
+    width: 50,
+    backgroundColor: '#405D72', // Pale Green picker background
+    borderRadius: 10,
+    borderColor: '#243642',
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  picker: {
+    height: 60,
+    color: '#405D72',
+  },
+  scan:{
+    width:50,
+    height:50,
+    backgroundColor:"#405D72",
+    shadowColor: '#C4E1F6',
+    shadowOffset: { width: 25, height: 25 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    borderRadius:50,
+    justifyContent:'center',
+    alignItems:'center'
   },
   video: {
     width: 80,
@@ -253,13 +413,14 @@ const styles = StyleSheet.create({
     fontSize:14,
     color:'white',
     marginLeft:8,
-     marginTop:-30
+    marginTop:-30
   },
   Kgtxt: {
-    fontSize:40,
+    fontSize:35,
     color:'#37B7C3',
     fontWeight:'bold',
     
   },
+  
   
 });

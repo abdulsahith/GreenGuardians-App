@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Dimensions, Switch, Alert,TouchableOpacity } fr
 // import * as Notifications from 'expo-notifications';
 // import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 function Settings() {
     const { width, height } = Dimensions.get('window');
     const [isEnabled, setEnable] = useState(false);
@@ -41,6 +41,11 @@ function Settings() {
     //         Alert.alert('Location Disabled', 'Location services have been disabled.');
     //     }
     // };
+    const handleLogout = async () => {
+        await AsyncStorage.removeItem('userToken');
+        Alert.alert('Logged Out', 'You have been logged out.');
+        router.push('/pages/login');
+      };
 
     return (
         <View style={[styles.main, { width: width * 1, height: height * 1 }]}>
@@ -49,8 +54,8 @@ function Settings() {
                 <Text style={[styles.loginText, { color: 'white', marginLeft: 20, fontSize: 20 }]}>
                     Change your account
                 </Text>
-                <TouchableOpacity style={styles.loginView} onPress={()=>{router.push('/pages/login')}}>
-                    <Text style={styles.loginText}>LOGIN</Text>
+                <TouchableOpacity style={styles.loginView} onPress={handleLogout}>
+                    <Text style={styles.loginText}>LOGOUT</Text>
                 </TouchableOpacity>
             </View>
 

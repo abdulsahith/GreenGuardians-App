@@ -102,8 +102,6 @@ function plastic() {
         setStatuses({
             received: data.received,
             processing: data.processing,
-            filtration: data.filtration,
-            generated: data.generated,
             dispatched: data.dispatched,
             pyro:data.pyro,
             pro:data.pro,
@@ -114,7 +112,9 @@ function plastic() {
         console.error('Error fetching statuses:', error);
     }
 };
-
+  
+   
+   
    const colorrec=statuses?.['received']==="OK"?'lightgreen':'grey'   
    const colorpro=statuses?.['processing']==="OK"?'lightgreen':'grey'  
    
